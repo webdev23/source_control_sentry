@@ -1,13 +1,13 @@
 ## [SCS] Source Control Sentry<br>
 Backup/Restore files. Watch for recursive content,ownerships and rights changes.<br>
 Create hard copies and display file diffs.<br>
-Optionally execute one -or more- commands, reload a browser tab, at a file change.<br>
+Optionally execute *commands*, reload a browser tab, at a file change.<br>
 Restore files on demand.<br>
 
-<img src="https://raw.githubusercontent.com/webdev23/source_control_sentry/master/scs.png">SCS</img>
+<img src="https://raw.githubusercontent.com/webdev23/source_control_sentry/master/scs.png">
 
-Automatize your dev flow. Example, run a test script, or compile at a file change.<br>
-Backup all files versions, while keeping an eye on the flow. No more code lost with CTRL+Z<br>
+Automatize your dev flow. Example, run a test script!<br>
+Backup all files versions, while keeping an eye on the flow.<br>
 Exclude hidden git files. Works well on top of git. Exclude nohup.out as well.<br>
 Can inject some javascript into a browser console tab, at a file change.<br>
 
@@ -34,15 +34,75 @@ And display file diffs at a change.
 Browse current DIR historic and restore files.
 Those are all changes made in the current DIR, by date, while the current program was running.
 
-    scs -b --browse
+    cd /mydir && scs -b
 
-#### Examples:
+### Examples:
 
-### Reload focused tabs of many browsers
+#### Reload focused tabs of many browsers, when a file changed.
     scs -r firefox -r chromium
 
-### Run commands
-    scs -r firefox -e "ls -ltrapR"
+#### Run commands, when a file changed.
+    scs -e "./mytest.sh"
 
-### Inject alert("xss") in the currently focused Firefox tab
+#### Inject the content of script.js in the currently focused Firefox tab, when a file changed.
     scs -x script.js
+
+---
+
+### Simple run:
+
+This is a monolithic script written in php. It will take care to create a hidden backup directory `.scs` in the home folder.
+The following tools are necessary on the system. (Notice `scs` might verify and update them at the first launch)
+
+    php curl xdotool diffutils colordiff wdiff
+
+The simplest usage is to put `scs` in the target directory and run it:
+
+    ./scs
+
+---
+
+### Or global Install:
+
+To install globally in one command, with all the dependencies and shortcuts, you can use my <a href="https://github.com/webdev23/phi">dedicated tool φ phi</a>:
+If φ phi is not currently installed, do:
+
+    php <(curl https://webdev23.github.io/phi/phi) install https://webdev23.github.io/source_control_sentry/scs
+    
+If φ phi is already there, simply:
+
+    phi install https://webdev23.github.io/source_control_sentry/scs
+
+Then, from any directory, start the program:
+
+    scs
+    
+ ---
+ 
+### Usage cases
+ 
+#### Web development
+ 
+Simply reload your browser tab automaticaly. Visualize your css without leaving your editor.
+ 
+#### Website automatization and testing
+
+A file change event will trigger the javascript code you wrote, in the browser console. 
+
+#### Trace a program
+
+Observe how a program works by viewing the change made in the files in real time.
+
+#### Run automagic tests
+
+Write your test scripts, and pass them in the `-e` param.<br>
+Their output are going to be displayed on the `scs` screen.
+
+#### Compile and run on the fly
+
+For the tasks requiring compilation, simply get the result by just saving your editor.
+
+#### A simple text editor become powerful
+
+No risks to loose code, rapid debugging. No more code lost with CTRL+Z
+
