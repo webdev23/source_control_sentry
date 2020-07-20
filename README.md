@@ -1,5 +1,6 @@
 ## [SCS] Source Control Sentry<br>
-Backup/Restore files. Watch for recursive content,ownerships and rights changes.<br>
+Watch for recursive content,ownerships and rights changes.<br>
+Backup/Restore files.<br> 
 Create hard copies and display file differences.<br>
 Optionally execute *commands*, reload a browser tab, at a file change.<br>
 Restore files on demand.<br>
