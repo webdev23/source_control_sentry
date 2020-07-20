@@ -48,20 +48,20 @@ Those are all changes made in the current DIR, by date, while the current progra
 
 ---
 
-### Simple run:
+### Simple run
 
 This is a monolithic script written in php. It will take care to create a hidden backup directory `.scs` in the home folder.<br>
 The following tools are necessary on the system. (Notice `scs` might verify and update them at the first launch)
 
-    php curl xdotool diffutils colordiff wdiff
+    sudo apt install php curl xdotool diffutils colordiff wdiff
 
 The simplest usage is to put `scs` in the target directory and run it:
 
-    ./scs
+    wget https://webdev23.github.io/source_control_sentry/scs && chmod +x scs && ./scs
 
 ---
 
-## Global Installation:
+## Global Installation (Recommended)
 
 To install globally in one command, with all the dependencies and shortcuts, you can use my <a href="https://github.com/webdev23/phi">dedicated tool φ phi</a>.
 
