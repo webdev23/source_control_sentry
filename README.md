@@ -20,8 +20,8 @@ And display file diffs at a change.
  -e  --exec    command
                Execute command (Use quotes if necessary)
  -r  --reload  program_name
-               Reload program_name (must have F5 capabilities)
- -x  --inject  <js file>
+               Refresh program_name (must have F5 capabilities)
+ -x  --inject  js_file
                javascript injection in browser console
      --purge 
                Delete cache
@@ -62,7 +62,7 @@ The simplest usage is to put `scs` in the target directory and run it:
 
 ---
 
-### Or global Install:
+### Or global Installation:
 
 To install globally in one command, with all the dependencies and shortcuts, you can use my <a href="https://github.com/webdev23/phi">dedicated tool φ phi</a>:
 If φ phi is not currently installed, do:
@@ -79,30 +79,33 @@ Then, from any directory, start the program:
     
  ---
  
-### Usage cases
+###💡Usage cases
  
-#### Web development
+#### 🌐 Web development
  
 Simply reload your browser tab automaticaly. Visualize your css without leaving your editor.
  
-#### Website automatization and testing
+#### 🔧 Automatization and testing
 
 A file change event will trigger the javascript code you wrote, in the browser console. 
 
-#### Trace a program
+#### 🔍 Trace a program
 
-Observe how a program works by viewing the change made in the files in real time.
+Observe how a program works by viewing the change made in his files in real time.
 
-#### Run automagic tests
+#### ✅ Run automagic tests
 
 Write your test scripts, and pass them in the `-e` param.<br>
 Their output are going to be displayed on the `scs` screen.
 
-#### Compile and run on the fly
+#### 🚗 Compile and run on the fly
 
 For the tasks requiring compilation, simply get the result by just saving your editor.
 
-#### A simple text editor become powerful
+#### 🔥 A simple text editor become all what we need
 
-No risks to loose code, rapid debugging. No more code lost with CTRL+Z
+No risks to loose code, rapid debugging. No more code lost with too much CTRL+Z.
 
+#### 😜 Assist development
+
+Keep an eye and quickly remember the changes made across files and line numbers.
