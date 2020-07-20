@@ -1,0 +1,358 @@
+#!/usr/bin/php
+<?php
+#> curl xdotool diffutils colordiff wdiff
+
+/* Source control utility. Backup/Restore files. Run actions on any change in a directory.
+ * Create hard copies and display file diffs.
+ * Verify content, ownserships and rights.
+ * Can execute one -or more- commands, or reload a browser tab, at a file change.
+ * Restore file on demand.
+ * Automatize dev flow. Example, run a test script, or compile at a file change.
+ * Recursive to the whole directory tree.
+ * Backup all files versions, keeping the flow by timestamp.
+ * Does not alter the dev target working dir.
+ * Exclude git hidden files. Works well on top of git.
+ * Can inject some javascript into a browser console tab, at a file change.
+*
+* PARAMS:
+* -e  --exec      <command>    Execute command (Use quotes if necessary)
+* -r  --reload    <program>    Reload target program (F5)
+* -x  --inject    <js file>    javascript injection in browser console
+*     --purge     Delete cache
+* All params can be declared multiple times
+*
+* Browse GLOBAL historic and restore files
+* Those are all changes made in the whole machine, by date, while the current program was running
+* -g --global
+*
+* 
+* * Browse DIR historic and restore files
+* Those are all changes made in the current DIR, by date, while the current program was running
+* -b --browse
+*
+* Examples:
+* # Reload focused tabs of many browsers
+* -r firefox -r chromium
+* # Run commands
+* ./scs -r firefox -e "ls -ltrapR"
+* # Inject alert("xss") in the currently focused Firefox tab
+*  -x script.js
+ *
+ * Can be used on top of any text editor CTR+Z + Fat fingers = lost code
+ * 
+ * */
+$path = getcwd();
+/*  Avoid pipe errors */
+stream_set_blocking(STDIN, 0);
+/* Fully report errors*/
+error_reporting(E_ALL);
+/* Path target DIR */
+$crc = hash("crc32", $path);
+
+/* Parse command line options */
+$com0 = $argv[0];
+$com1 = "rchange"; // @$argv[1];
+$com2 = @$argv[2]; // exec, reload, inject
+$com3 = @$argv[3]; // <browser>, command
+$com4 = @$argv[4];
+
+/* Home path */
+$home = $_SERVER['HOME'];
+$params = $argv;
+
+/* --purge : Delete backup DIR */
+if (@$params[1] === "--purge"){
+  echo "Erasing cache.\n";
+  //readline();
+  exec("rm -rf ~/.scs/*");
+  exit;
+}
+
+/* Dispatch command line options */
+$FLAGPARAMS = ["commands" => [], "reloads" => [], "injects" => [], "historic" => []];
+foreach ($params as $k => $v){
+  if ($v === "-e"){
+    echo "Got commands\n";
+    $FLAGPARAMS["commands"][] = $params[$k + 1];
+  }
+  if ($v === "-r"){
+    echo "Got reloads\n";
+    $FLAGPARAMS["reloads"][] = $params[$k + 1];
+  }
+  if ($v === "-x"){
+    echo "Got injections\n";
+    $FLAGPARAMS["injects"][] = $params[$k + 1];
+  }
+  if ($v === "-g" || $v === "--global"){
+    echo "GLOBAL HISTORIC mode\n";
+    $com1 = "history";
+  }
+  if ($v === "--setup"){
+    echo "Installing\n";
+    $com1 = "setup";
+  }
+  if ($v === "--purge"){
+    $com1 = "purge";
+  }
+  if ($v === "-b" || $v === "--browse"){
+    echo "Historic\n";
+    if (!is_file("$home/.scs/index$crc")){echo "This directory has no backups\n";exit;}
+    if (@$params[$k+1] != ""){
+      echo "History of ".$params[$k+1]."\n";
+      $FLAGPARAMS["historic"][] = $params[$k+1];
+    } else {
+      echo "History of $path\n";
+      $FLAGPARAMS["historic"][] = $crc;
+    }
+    $com1 = "history";
+  }
+}
+
+/* The backup folder doesn't exist */
+if (!is_dir($_SERVER['HOME']."/.scs")){
+  echo "Setting up ~/.scs\n";
+  $com1 = "setup";
+}
+
+/* Setup option */
+ if ($com1 === "setup"){
+  exec("mkdir -p ~/.scs && touch ~/.scs/ && cd ~/.scs ; touch ~/.scs/dif ~/.scs/sum ~/.scs/todif ~/.scs/ttodif ~/.scs/ttodif ~/.scs/hold");
+  $com1 = "rchange";
+}
+
+/* Max dir size copy [100mo] or ABORT */
+$maxdirsize = "100000"; // Bytes
+/* History array creation */
+$history = ["HELLO","WORLD!"];
+$iloop = 0;
+
+function shutdown(){
+  echo 'Success', PHP_EOL;
+}
+register_shutdown_function('shutdown');
+
+/* Draw a separator line across the shell */
+function sep(){
+  @ob_start();
+  $shell = system("tput cols");
+  @ob_end_clean();
+  for( $i= 0 ; $i < $shell ; $i++ ){
+    echo "─";
+  }
+};
+
+/* The target DIR is over over $maxdirsize */
+@ob_start();
+$ts = (int)system("ls -ltr | head -n1 | cut -d' ' -f2");
+@ob_end_clean();
+if ($ts > $maxdirsize){
+  echo "Hey this directory is full AF. Not suitable as a scs folder. Aborting.\n";
+  exit;
+}
+
+$iview = intval("1");
+/* History option */
+if ($com1 === "history"){
+  $dirhash = "";
+  $home = $_SERVER['HOME'];
+  if ((count($FLAGPARAMS["historic"]) != 0) && is_file("$home/.scs/index$crc")){
+    $dirhash = $FLAGPARAMS["historic"][0];
+  }
+  rdiff($iview,$dirhash);
+  echo "\n";
+  echo join(array_slice(file("$home/.scs/index$dirhash"), -12));
+  HISTORY:
+  echo "\n";
+  sep();
+  $store = file("$home/.scs/index$dirhash");
+  $rep = readline("Before [b] | Next [n] | Restore [r]: ");
+  $line = $store[count($store)-($iview)];
+  $last = str_replace("~","home",$line);
+  $last = explode("home",$last);
+  $lastp1 = $home.trim($last[1]);
+  $lastp2 = $home.trim($last[2]);
+  $rpath = @explode("]", @explode("[",$line)[2])[0];
+  $rpath = substr($rpath, 0, strlen($rpath));
+  $subpath = join("/",array_slice(explode("/",$lastp2),6));
+  $rpath  = $path . "/" . $rpath.$subpath;
+  //var_dump("cp '$lastp2' '$rpath'");
+  echo "\033[1m".$subpath."\e[0m".PHP_EOL;
+  $ls1 = system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif $lastp2 | egrep -v '\.$|\.\.|\.:|\.\/|total|^d'| sed '/^$/d' > $home/.scs/.lsbcopy1");
+  $ls2 = system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif $rpath | egrep -v '\.$|\.\.|\.:|\.\/|total|^d'| sed '/^$/d' > $home/.scs/.lsbcopy2");
+  @system("dwdiff -cbmagenta:black -C 0 -L '$home/.scs/.lsbcopy1' '$home/.scs/.lsbcopy2'");
+  if ($iview < "1"){
+     $iview = "1"; echo "\n---End of history---\n";
+  }
+  if ($rep === "b"){
+     rdiff(($iview++)+1, $dirhash);
+  }
+  if ($rep === "n"){
+   rdiff(($iview--)-1, $dirhash);
+  }
+  if ($rep === "r"){
+    @ob_end_clean;
+    echo "\033[1mcp -P '$lastp2' '$rpath'\e[0m\n";
+    readline("Confirm copy? ");
+    system("cp -P '$lastp2' '$rpath'");
+    /* Hide stdout */
+    @ob_start();
+    /* Number of shell columns, for a nice progress bar */
+    $shell = system("tput cols");
+    /* Retake stdout as regular */
+    @ob_end_clean();
+    echo PHP_EOL;
+    $i= 0;
+    for( $i ; $i < 81; $i++ ){
+      $hello = "\rFile replaced in $path . Your editor is going to display an alert!";
+      if ($i === "79"){
+        $i = "0";
+      }
+      $hello = str_split($hello);
+      $hello[$i] = strtoupper($hello[$i]);
+      echo implode($hello);
+      usleep(30000); } /* <- Fast */
+    }
+  goto HISTORY;
+}
+
+/* Diff files */
+function rdiff($me, $crc = ""){
+  @ob_start;
+  $home = $_SERVER['HOME'];
+  if (count(file("$home/.scs/index$crc")) - $me <= 2){echo "No more diff found";return;}
+  $store = file("$home/.scs/index$crc");
+  $last = $store[count($store)-$me-1];
+  $last = str_replace("~","home",$last);
+  $last = explode("home",$last);
+  $lastp1 = $home.trim($last[1]);
+  $lastp2 = $home.trim($last[2]);
+  @ob_end_clean;
+  echo PHP_EOL;
+  @system("dwdiff -c -C 0 -L '$lastp1' '$lastp2'");
+}
+
+$dirWatch = $path;
+$dimd5 = system("ls -pl --time-style=full-iso -I '*.git' -I 'nohup.out' $path");
+$dirmd5 = md5($dimd5);
+/* Keep the hashes in an array, to create an historic */
+array_push($history, $dirmd5);
+/* RCHANGE, recursive into subfolders */
+if ($com1 === "rchange"){
+  @ob_start();
+  /* Necessary files and directory creation */
+  exec("mkdir -p ~/.scs/$dirmd5 && cd ~/.scs/$dirmd5 ; touch dif sum todif ttodif ttodif hold history.json && touch ~/.scs/index && touch ~/.scs/index$crc");
+  /* Save the directory md5 hash into a file */
+  $dmd5 = system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d'");
+  file_put_contents("$home/.scs/$dirmd5/sum",md5($dmd5));
+  /* Save the recursive ls output into a file */
+  system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' > ~/.scs/$dirmd5/todif");
+  @ob_end_clean();
+}
+@ob_start();
+$shell = intval(system("tput cols"));
+@ob_end_clean();
+echo "[+]\n";
+
+/*Watcher loop */
+while(true){
+  /* Slow down */
+  usleep(700000);
+  /* Hide stdout */
+  @ob_start();
+  if ($com1 === "rchange"){
+    /* Save recursive ls output md5 */
+    system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' | md5sum > ~/.scs/$dirmd5/hold");
+    /* Create new md5 from php */
+    $newmd5 = md5(system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d'"));
+  }
+  @ob_end_clean();
+  if ($com1 === "rchange"){
+    $hello = "  Watching changes";
+    if (strlen($hello) === $iloop + 4){
+      $iloop = "0";
+    }
+    $hello = str_split($hello);
+    $iloop++;
+    $hello[$iloop] = strtoupper($hello[$iloop]);
+    echo "\r\r".implode($hello) . " in " .  $path . "\r\r";
+    $sum = file_get_contents("$home/.scs/$dirmd5/sum");
+    $hold = file_get_contents("$home/.scs/$dirmd5/hold");
+    // File changed
+    if ($sum != $hold && $iloop > 3){
+      @ob_start();
+      $shell = system("tput cols");
+      if ($com1 === "rchange"){
+        system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' | md5sum > ~/.scs/$dirmd5/sum");
+        system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' | md5sum > ~/.scs/$dirmd5/hold");
+        system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' > ~/.scs/$dirmd5/dif");
+      }
+      array_push($history, md5(system("cat ~/.scs/$dirmd5/hold")));
+      $lastdif = end($history);
+      $beforedif = $history[count($history)-2];
+      $stack = json_encode($history);
+      file_put_contents("$home/.scs/$dirmd5/history.json",$stack);
+      $focus = system("find . -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d'/'");
+      system("mkdir -p ~/.scs/$dirmd5/$lastdif && cp -R . ~/.scs/$dirmd5/$lastdif");
+      @ob_end_clean();
+      if (is_file("$home/.scs/$dirmd5/$beforedif/$focus") && is_file("$home/.scs/$dirmd5/$lastdif/$focus")){
+        sep();
+        echo PHP_EOL."@ ".date('D M j Y G:i:s');
+        echo "\nFile change in $path\n";
+        echo "\033[1m".$focus."\e[0m\n";
+        @system("dwdiff -c -C 0 '$home/.scs/$dirmd5/todif' '$home/.scs/$dirmd5/dif'");
+        echo str_repeat("-",$shell)."\n";
+        @system("dwdiff -c -C 0 -L '$home/.scs/$dirmd5/$beforedif/$focus' '$home/.scs/$dirmd5/$lastdif/$focus'");
+        echo str_repeat("-",$shell)."\n";
+      }
+      // Load history json file/
+      $json = file_get_contents("$home/.scs/$dirmd5/history.json");
+      $idx= file_get_contents("$home/.scs/index");
+      $idxcrc = file_get_contents("$home/.scs/index$crc");
+      // Decode json into array/
+      @$stack_temp = json_decode($json);
+      // Push md5 in history array/
+      @array_push($stack_temp, md5(file_get_contents($com1)));
+      // Encode back into json/
+      @$stack = json_encode($stack_temp);
+      // Save back history in historic/
+      @file_put_contents("$home/.scs/$dirmd5/history.json",$stack);
+      $indexline = "[".date("D M j G:i:s T Y")."] ~/.scs/$dirmd5/$beforedif/$focus"." ~/.scs/$dirmd5/$lastdif/$focus".PHP_EOL;
+      @file_put_contents("$home/.scs/index",$indexline,FILE_APPEND);
+      @file_put_contents("$home/.scs/index$crc",$indexline,FILE_APPEND);
+      if ((count($FLAGPARAMS["reloads"]) != 0)){
+        foreach ($FLAGPARAMS["reloads"] as $k=>$v){
+          $firefox = system("xdotool search --name $v | tail -1");
+          system("xdotool windowactivate $firefox");
+          system("xdotool windowactivate --sync $firefox key F5");
+        }
+      }
+      if ((count($FLAGPARAMS["commands"]) != 0)){
+        foreach ($FLAGPARAMS["commands"] as $k=>$v){
+          system("$v &");
+        }
+      }
+      if ((count($FLAGPARAMS["injects"]) != 0)){
+        foreach ($FLAGPARAMS["injects"] as $k=>$v){
+          $pipe = file_get_contents($v);
+          //$pipe = $v;
+          var_dump($pipe );
+          echo "Trying javascript injection\n$pipe \non: $com3\n";
+          $firefox = system("xdotool search --name Firefox | tail -1");
+          system("xdotool windowactivate $firefox");
+          if ($pipe == " "){
+            echo "\nWarning: STDIN empty\nSee help section(-h or --help)\n";
+          }
+          system("echo -n '$pipe' | xclip -selection clipboard > /scs/null");
+          usleep(1000000);
+          system("xdotool key ctrl+shift+E"); // open debugger
+          usleep(1000000);
+          system("xdotool key ctrl+shift+L"); // clear
+          usleep(100000);
+          system("xdotool key ctrl+v"); // paste
+          usleep(100000);
+          system("xdotool key Return"); // execute
+        }
+      }
+    }
+  }
+}
