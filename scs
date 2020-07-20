@@ -11,36 +11,27 @@
  * Recursive to the whole directory tree.
  * Backup all files versions, keeping the flow by timestamp.
  * Does not alter the dev target working dir.
- * Exclude git hidden files. Works well on top of git.
- * Can inject some javascript into a browser console tab, at a file change.
-*
-* PARAMS:
-* -e  --exec      <command>    Execute command (Use quotes if necessary)
-* -r  --reload    <program>    Reload target program (F5)
-* -x  --inject    <js file>    javascript injection in browser console
-*     --purge     Delete cache
-* All params can be declared multiple times
-*
-* Browse GLOBAL historic and restore files
-* Those are all changes made in the whole machine, by date, while the current program was running
-* -g --global
-*
-* 
-* * Browse DIR historic and restore files
-* Those are all changes made in the current DIR, by date, while the current program was running
-* -b --browse
-*
-* Examples:
-* # Reload focused tabs of many browsers
-* -r firefox -r chromium
-* # Run commands
-* ./scs -r firefox -e "ls -ltrapR"
-* # Inject alert("xss") in the currently focused Firefox tab
-*  -x script.js
- *
- * Can be used on top of any text editor CTR+Z + Fat fingers = lost code
+ * Exclude git hidden files. Exclude vim and nano .swp files.
  * 
- * */
+ * PARAMS:
+ * -e  --exec      <command>    Execute command (Use quotes if necessary)
+ * -r  --reload    <program>    Reload target program (F5)
+ * -x  --inject    <js file>    javascript injection in browser console
+ *     --purge     Delete cache
+ * 
+ * Browse DIR historic and restore files
+ * Those are all changes made in the current DIR, by date, while the current program was running
+ * -b --browse
+ *
+ * Examples:
+ * # Reload focused tabs of many browsers
+ * -r firefox -r chromium
+ * # Run commands
+ * ./scs -r firefox -e "ls -ltrapR"
+ * # Inject alert("xss") in the currently focused Firefox tab
+ *  -x script.js
+*/
+
 $path = getcwd();
 /*  Avoid pipe errors */
 stream_set_blocking(STDIN, 0);
@@ -177,8 +168,8 @@ if ($com1 === "history"){
   $rpath  = $path . "/" . $rpath.$subpath;
   //var_dump("cp '$lastp2' '$rpath'");
   echo "\033[1m".$subpath."\e[0m".PHP_EOL;
-  $ls1 = system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif $lastp2 | egrep -v '\.$|\.\.|\.:|\.\/|total|^d'| sed '/^$/d' > $home/.scs/.lsbcopy1");
-  $ls2 = system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif $rpath | egrep -v '\.$|\.\.|\.:|\.\/|total|^d'| sed '/^$/d' > $home/.scs/.lsbcopy2");
+  $ls1 = system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif $lastp2 | egrep -v '\.$|\.\.|\.:|\.\/|total|^d'| sed '/^$/d' > $home/.scs/.lsbcopy1");
+  $ls2 = system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif $rpath | egrep -v '\.$|\.\.|\.:|\.\/|total|^d'| sed '/^$/d' > $home/.scs/.lsbcopy2");
   @system("dwdiff -cbmagenta:black -C 0 -L '$home/.scs/.lsbcopy1' '$home/.scs/.lsbcopy2'");
   if ($iview < "1"){
      $iview = "1"; echo "\n---End of history---\n";
@@ -232,7 +223,7 @@ function rdiff($me, $crc = ""){
 }
 
 $dirWatch = $path;
-$dimd5 = system("ls -pl --time-style=full-iso -I '*.git' -I 'nohup.out' $path");
+$dimd5 = system("ls -pl --time-style=full-iso -I '.git' -I '.*.swp' -I 'nohup.out' $path");
 $dirmd5 = md5($dimd5);
 /* Keep the hashes in an array, to create an historic */
 array_push($history, $dirmd5);
@@ -242,10 +233,10 @@ if ($com1 === "rchange"){
   /* Necessary files and directory creation */
   exec("mkdir -p ~/.scs/$dirmd5 && cd ~/.scs/$dirmd5 ; touch dif sum todif ttodif ttodif hold history.json && touch ~/.scs/index && touch ~/.scs/index$crc");
   /* Save the directory md5 hash into a file */
-  $dmd5 = system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d'");
+  $dmd5 = system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d'");
   file_put_contents("$home/.scs/$dirmd5/sum",md5($dmd5));
   /* Save the recursive ls output into a file */
-  system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' > ~/.scs/$dirmd5/todif");
+  system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' > ~/.scs/$dirmd5/todif");
   @ob_end_clean();
 }
 @ob_start();
@@ -261,9 +252,9 @@ while(true){
   @ob_start();
   if ($com1 === "rchange"){
     /* Save recursive ls output md5 */
-    system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' | md5sum > ~/.scs/$dirmd5/hold");
+    system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' | md5sum > ~/.scs/$dirmd5/hold");
     /* Create new md5 from php */
-    $newmd5 = md5(system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d'"));
+    $newmd5 = md5(system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d'"));
   }
   @ob_end_clean();
   if ($com1 === "rchange"){
@@ -282,9 +273,9 @@ while(true){
       @ob_start();
       $shell = system("tput cols");
       if ($com1 === "rchange"){
-        system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' | md5sum > ~/.scs/$dirmd5/sum");
-        system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' | md5sum > ~/.scs/$dirmd5/hold");
-        system("ls --time-style=full-iso -ltrapR -I '*.git' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' > ~/.scs/$dirmd5/dif");
+        system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' | md5sum > ~/.scs/$dirmd5/sum");
+        system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' | md5sum > ~/.scs/$dirmd5/hold");
+        system("ls --time-style=full-iso -ltrapR -I '.git' -I '.*.swp' -I 'nohup.out' -I sum -I todif -I hold -I dif -I ttodif -I tttodif | egrep -v '\.$|\.\.|\.:|\.\/|total|^d' | sed '/^$/d' > ~/.scs/$dirmd5/dif");
       }
       array_push($history, md5(system("cat ~/.scs/$dirmd5/hold")));
       $lastdif = end($history);
