@@ -6,9 +6,9 @@ Restore files on demand.<br>
 
 <img src="https://raw.githubusercontent.com/webdev23/source_control_sentry/master/scs.png">
 
-Automatize your dev flow. Example, run a test script!<br>
-Backup all files versions, while keeping an eye on the flow.<br>
-Exclude hidden git files. Works well on top of git. Exclude nohup.out as well.<br>
+Automatize your dev flow. Example, run a test script at a file change!<br>
+Backup files versions, while keeping an eye on the flow.<br>
+Exclude hidden git files. Exclude vim and nano .swp files. Exclude nohup.out.<br>
 
 **By default, without parameters, the program starts to watch the current directory.
 And display file diffs at a change**.
