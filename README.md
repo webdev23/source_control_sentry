@@ -9,9 +9,8 @@ Restore files on demand.<br>
 Automatize your dev flow. Example, run a test script!<br>
 Backup all files versions, while keeping an eye on the flow.<br>
 Exclude hidden git files. Works well on top of git. Exclude nohup.out as well.<br>
-Can inject some javascript into a browser console tab, at a file change.<br>
 
-By default, without parameters, the program starts to watch the current directory.
+**By default, without parameters, the program starts to watch the current directory.
 And display file diffs at a change.
 
 
@@ -62,7 +61,7 @@ The simplest usage is to put `scs` in the target directory and run it:
 
 ---
 
-### Or global Installation:
+## Global Installation:
 
 To install globally in one command, with all the dependencies and shortcuts, you can use my <a href="https://github.com/webdev23/phi">dedicated tool φ phi</a>:
 If φ phi is not currently installed, do:
@@ -79,7 +78,7 @@ Then, from any directory, start the program:
     
  ---
  
-###💡Usage cases
+### 💡 Usage cases
  
 #### 🌐 Web development
  
