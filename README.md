@@ -1,18 +1,19 @@
 ## [SCS] Source Control Sentry<br>
-Backup/Restore files.<br>
-Run actions on any change in a directory.<br>
+Backup/Restore files. Watch for recursive content,ownerships and rights changes.<br>
 Create hard copies and display file diffs.<br>
-Verify content, ownserships and rights.<br>
-Can execute one -or more- commands, or reload a browser tab, at a file change.<br>
+Optionally execute one -or more- commands, reload a browser tab, at a file change.<br>
 Restore files on demand.<br>
-Automatize dev flow. Example, run a test script, or compile at a file change.<br>
-Recursive to the whole directory tree.<br>
-Backup all files versions, keeping the flow by timestamp.<br>
-Exclude git hidden files. Works well on top of git. Exclude nohup.out as well.<br>
+
+<img src="https://raw.githubusercontent.com/webdev23/source_control_sentry/master/scs.png">SCS</img>
+
+Automatize your dev flow. Example, run a test script, or compile at a file change.<br>
+Backup all files versions, while keeping an eye on the flow. No more code lost with CTRL+Z<br>
+Exclude hidden git files. Works well on top of git. Exclude nohup.out as well.<br>
 Can inject some javascript into a browser console tab, at a file change.<br>
 
-By default, without parameters, starts to watch the current directory.
-Display diffs at a file change.
+By default, without parameters, the program starts to watch the current directory.
+And display file diffs at a change.
+
 
 ### PARAMS:
 <pre>
@@ -31,19 +32,17 @@ Display diffs at a file change.
 ### Browse historic and restore files
 
 Browse current DIR historic and restore files.
-Those are all changes made in the current DIR, by date, while the current program was running
--b --browse
+Those are all changes made in the current DIR, by date, while the current program was running.
 
-### Examples:
+    scs -b --browse
+
+#### Examples:
 
 ### Reload focused tabs of many browsers
--r firefox -r chromium
+    scs -r firefox -r chromium
 
 ### Run commands
- ./dev -r firefox -e "ls -ltrapR"
+    scs -r firefox -e "ls -ltrapR"
 
 ### Inject alert("xss") in the currently focused Firefox tab
- -x script.js
-
- Can be used on top of any text editor CTR+Z + Fat fingers = lost code
-
+    scs -x script.js
