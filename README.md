@@ -1,14 +1,12 @@
 ## [SCS] Source Control Sentry<br>
 Backup/Restore files. Watch for recursive content,ownerships and rights changes.<br>
-Create hard copies and display file diffs.<br>
+Create hard copies and display file differences.<br>
 Optionally execute *commands*, reload a browser tab, at a file change.<br>
 Restore files on demand.<br>
 
 <img src="https://raw.githubusercontent.com/webdev23/source_control_sentry/master/scs.png">
-
-Automatize your dev flow. Example, run a test script at a file change!<br>
 Backup files versions, while keeping an eye on the flow.<br>
-Exclude hidden git files. Exclude vim and nano .swp files. Exclude nohup.out.<br>
+By default, exclude hidden git files. Exclude vim and nano .swp files. Exclude nohup.out.<br>
 
 **By default, without parameters, the program starts to watch the current directory.
 And display file diffs at a change**.
