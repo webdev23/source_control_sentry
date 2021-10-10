@@ -1,3 +1,5 @@
+<a href="https://stackoverflow.com/users/2494754/nvrm"><img src="https://stackoverflow.com/users/flair/2494754.png" width="208" height="58" alt="profile for NVRM at Stack Overflow, Q&amp;A for professional and enthusiast programmers" title="profile for NVRM at Stack Overflow, Q&amp;A for professional and enthusiast programmers"></a>
+
 ## [SCS] Source Control Sentry<br>
 Watch for recursive content,ownerships and rights changes.<br>
 Backup/Restore files.<br> 
