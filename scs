@@ -208,7 +208,7 @@ if ($com1 === "history"){
 
 /* Diff files */
 function rdiff($me, $crc = ""){
-  @ob_start;
+  @ob_start();
   $home = $_SERVER['HOME'];
   if (count(file("$home/.scs/index$crc")) - $me <= 2){echo "No more diff found";return;}
   $store = file("$home/.scs/index$crc");
@@ -217,7 +217,7 @@ function rdiff($me, $crc = ""){
   $last = explode("home",$last);
   $lastp1 = $home.trim($last[1]);
   $lastp2 = $home.trim($last[2]);
-  @ob_end_clean;
+  @ob_end_clean();
   echo PHP_EOL;
   @system("dwdiff -c -C 0 -L '$lastp1' '$lastp2'");
 }
