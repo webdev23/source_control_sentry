@@ -181,7 +181,7 @@ if ($com1 === "history"){
    rdiff(($iview--)-1, $dirhash);
   }
   if ($rep === "r"){
-    @ob_end_clean;
+    @ob_end_clean();
     echo "\033[1mcp -P '$lastp2' '$rpath'\e[0m\n";
     readline("Confirm copy? ");
     system("cp -P '$lastp2' '$rpath'");
